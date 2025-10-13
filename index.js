@@ -59,7 +59,9 @@ app.post('/usuarios',async (req,res) => {
 
         try{
             const {nickname, correo, contrasena} = req.body;
-            const user = await Usuario.create({nickname,correo,contrasena});
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(contrasena, salt);
+            const user = await Usuario.create({nickname,correo,hashedPassword});
             res.status(201).json(user);
         }catch(err)
         {
