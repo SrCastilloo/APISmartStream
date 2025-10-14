@@ -30,7 +30,7 @@ app.get('/', (req,res) => {
 app.get('/usuarios',async(req,res,next) => {
 
     try{
-        const usuarios = await Usuario.find().lean();
+        const usuarios = await Usuario.find().select('-contrasena').lean();
         res.json(usuarios);
     }catch(err)
     {
@@ -45,6 +45,7 @@ app.get('/usuarios/:correo',  async(req,res) => {
     {
         const correo= req.params.correo.toLowerCase();
         const usuario = await Usuario.findOne({correo}).lean(); //lean acelera el proceso devolviendo un objeto plano JSON
+
 
         if(!usuario) return res.status(404).send('No existe un usuario con este correo');
         
@@ -69,6 +70,29 @@ app.post('/usuarios',async (req,res) => {
         }
 }
 );
+
+
+//inicio de sesión del usuario
+app.post('/login', async (req, res) => {
+  try {
+    const { correo, contrasena } = req.body;
+    const user = await Usuario.findOne({ correo });
+    if (!user) return res.status(401).json({ error: 'Credenciales incorrectas' });
+
+    const match = await bcrypt.compare(contrasena, user.contrasena); // compara plain vs hash
+    if (!match) return res.status(401).json({ error: 'Credenciales incorrectas' });
+
+    // contraseña correcta -> crea sesión / JWT / lo que uses
+     // ejemplo
+    return res.status(200).json({message: 'Credenciales correctas'});
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+
+
+
 
 app.delete('/usuarios/:correo',async (req,res) => {
 
