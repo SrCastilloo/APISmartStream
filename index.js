@@ -76,17 +76,22 @@ app.post('/usuarios',async (req,res) => {
 app.post('/login', async (req, res) => {
   try {
     const { correo, contrasena } = req.body;
-    const user = await Usuario.findOne({ correo }).select('-contrasena').lean();
-    if (!user) return res.status(401).json({ error: 'Credenciales incorrectas' });
 
-    const match = await bcrypt.compare(contrasena, user.contrasena); // compara plain vs hash
-    if (!match) return res.status(401).json({ error: 'Credenciales incorrectas' });
+    // trae el usuario con su hash (sin .select('-contrasena') y sin .lean() de momento)
+    const doc = await Usuario.findOne({ correo });
+    if (!doc) return res.status(401).json({ error: 'Credenciales incorrectas' });
 
-    // contraseña correcta -> crea sesión / JWT / lo que uses
-     // ejemplo
+    const ok = await bcrypt.compare(contrasena, doc.contrasena);
+    if (!ok) return res.status(401).json({ error: 'Credenciales incorrectas' });
+
+    // sanitizar salida
+    const user = doc.toObject();
+    delete user.contrasena;
+
     return res.status(200).json(user);
   } catch (err) {
-    res.status(500).send(err);
+    console.error('Error en /login:', err);
+    return res.status(500).json({ error: 'Error interno' });
   }
 });
 
