@@ -76,7 +76,7 @@ app.post('/usuarios',async (req,res) => {
 app.post('/login', async (req, res) => {
   try {
     const { correo, contrasena } = req.body;
-    const user = await Usuario.findOne({ correo });
+    const user = await Usuario.findOne({ correo }).select('-contrasena').lean();
     if (!user) return res.status(401).json({ error: 'Credenciales incorrectas' });
 
     const match = await bcrypt.compare(contrasena, user.contrasena); // compara plain vs hash
@@ -84,7 +84,7 @@ app.post('/login', async (req, res) => {
 
     // contraseña correcta -> crea sesión / JWT / lo que uses
      // ejemplo
-    return res.status(200).json({message: 'Credenciales correctas'});
+    return res.status(200).json(user);
   } catch (err) {
     res.status(500).send(err);
   }
