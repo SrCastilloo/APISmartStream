@@ -4,7 +4,7 @@ const bcrypt= require('bcrypt');
 const app = express();
 const connectDB = require('./db');
 const Usuario = require('./user.model');
-
+const forumRoutes = require('./forum.routes');
 app.use(express.json());
 
 
@@ -72,29 +72,31 @@ app.post('/usuarios',async (req,res) => {
 );
 
 
-//inicio de sesión del usuario
+
 app.post('/login', async (req, res) => {
   try {
     const { correo, contrasena } = req.body;
-
-    // trae el usuario con su hash (sin .select('-contrasena') y sin .lean() de momento)
     const doc = await Usuario.findOne({ correo });
     if (!doc) return res.status(401).json({ error: 'Credenciales incorrectas' });
 
     const ok = await bcrypt.compare(contrasena, doc.contrasena);
     if (!ok) return res.status(401).json({ error: 'Credenciales incorrectas' });
 
-    // sanitizar salida
     const user = doc.toObject();
     delete user.contrasena;
 
-    return res.status(200).json(user);
+    const token = jwt.sign(
+      { id: doc._id.toString(), correo: user.correo, nickname: user.nickname },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    return res.status(200).json({ user, token });
   } catch (err) {
     console.error('Error en /login:', err);
     return res.status(500).json({ error: 'Error interno' });
   }
 });
-
 
 
 
@@ -116,6 +118,7 @@ app.delete('/usuarios/:correo',async (req,res) => {
 });
 
 
+app.use('/forum',forumRoutes);
 
 const port = process.env.port || 3000;    
 app.listen(port, () => console.log(`Escuchando en el puerto ${port} ...`));
