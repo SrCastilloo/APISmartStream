@@ -6,6 +6,7 @@ const connectDB = require('./db');
 const Usuario = require('./user.model');
 const forumRoutes = require('./forum.routes');
 app.use(express.json());
+const jwt = require('jsonwebtoken'); 
 
 
 //conectar a la base de datos
