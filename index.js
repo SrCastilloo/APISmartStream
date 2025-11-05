@@ -7,6 +7,7 @@ const Usuario = require('./user.model');
 const forumRoutes = require('./forum.routes');
 app.use(express.json());
 const jwt = require('jsonwebtoken'); 
+const cors = require('cors');
 
 
 //conectar a la base de datos
@@ -120,6 +121,7 @@ app.delete('/usuarios/:correo',async (req,res) => {
 
 
 app.use('/forum',forumRoutes);
+app.use(cors());
 
 const port = process.env.port || 3000;    
 app.listen(port, () => console.log(`Escuchando en el puerto ${port} ...`));
