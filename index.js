@@ -155,6 +155,41 @@ app.delete('/usuarios/:correo',async (req,res) => {
 
 });
 
+// Cambiar contraseña sin login (recuperación)
+app.post('/usuarios/reset-password', async (req, res) => {
+  try {
+    const { correo, nuevaContrasena } = req.body;
+
+    if (!correo || !nuevaContrasena) {
+      return res.status(400).json({ error: 'Faltan correo o nuevaContrasena' });
+    }
+
+    if (nuevaContrasena.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+    }
+
+    const user = await Usuario.findOne({ correo: correo.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ error: 'No existe un usuario con este correo' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(nuevaContrasena, salt);
+
+    user.contrasena = hashed;
+    await user.save();
+
+    return res.json({ ok: true, message: 'Contraseña actualizada correctamente' });
+  } catch (err) {
+    console.error('Error en /usuarios/reset-password:', err);
+    return res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+app.get('/recuperar-contrasena.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'recuperar-contrasena.html'));
+});
+
 
 app.use('/forum',forumRoutes);
 
