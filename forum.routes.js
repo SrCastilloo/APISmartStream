@@ -3,8 +3,8 @@ const express = require('express');
 const Post = require('./post.model')
 const Comment = require('./comment.model');
 const auth = require('./middlewares/auth.middleware');
-const admin = require('../firebaseAdmin');     // <- Ruta según tu proyecto
-const Usuario = require('../user.model');      // <- Modelo de usuario
+const admin = require('./firebaseAdmin');     // <- Ruta según tu proyecto
+const Usuario = require('./user.model');      // <- Modelo de usuario
 
 const router = express.Router();
 
