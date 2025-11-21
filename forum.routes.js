@@ -68,6 +68,10 @@ async function sendNewPostNotification(post) {
       },
     };
 
+    console.log('TOKENS FCM:', tokens);
+    console.log(`Notificaciones enviadas: ${res.successCount}, fallos: ${res.failureCount}`);
+
+
     const res = await admin.messaging().sendMulticast(message);
     console.log(` Notificaciones enviadas: ${res.successCount}, fallos: ${res.failureCount}`);
   } catch (e) {
