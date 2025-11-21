@@ -1,10 +1,11 @@
-// routes/forum.routes.js
 const express = require('express');
 const Post = require('./post.model')
 const Comment = require('./comment.model');
 const auth = require('./middlewares/auth.middleware');
-const admin = require('./firebaseAdmin');     // <- Ruta según tu proyecto
-const Usuario = require('./user.model');      // <- Modelo de usuario
+require('./firebaseAdmin'); // para asegurarnos de que Firebase se inicializa
+const { getMessaging } = require('firebase-admin/messaging');
+const Usuario = require('./user.model');
+
 
 const router = express.Router();
 
@@ -42,6 +43,9 @@ router.post('/posts', auth, async (req, res) => {
 // ------------------------
 //  Enviar notificación FCM a todos los usuarios
 // ------------------------
+// ------------------------
+//  Enviar notificación FCM a todos los usuarios
+// ------------------------
 async function sendNewPostNotification(post) {
   try {
     const users = await Usuario.find({
@@ -57,7 +61,8 @@ async function sendNewPostNotification(post) {
 
     console.log('TOKENS FCM:', tokens);
 
-    const payload = {
+    const request = {
+      tokens,
       notification: {
         title: 'Nuevo post en el foro',
         body:
@@ -72,8 +77,8 @@ async function sendNewPostNotification(post) {
       },
     };
 
-  
-    const res = await admin.messaging().sendToDevice(tokens, payload);
+    const messaging = getMessaging();           
+    const res = await messaging.sendEachForMulticast(request);
 
     console.log(
       `Notificaciones enviadas: ${res.successCount}, fallos: ${res.failureCount}`,
