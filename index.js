@@ -11,7 +11,7 @@ const forumRoutes = require('./forum.routes');
 app.use(express.json());
 const jwt = require('jsonwebtoken'); 
 
-
+const path = require('path'); 
 
 
 //conectar a la base de datos
