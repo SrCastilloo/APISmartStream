@@ -3,22 +3,78 @@ const express = require('express');
 const Post = require('./post.model')
 const Comment = require('./comment.model');
 const auth = require('./middlewares/auth.middleware');
+const admin = require('../firebaseAdmin');     // <- Ruta según tu proyecto
+const Usuario = require('../user.model');      // <- Modelo de usuario
+
 const router = express.Router();
 
+// Crear post
 // Crear post
 router.post('/posts', auth, async (req, res) => {
   try {
     const { content } = req.body;
-    if (!content?.trim()) return res.status(400).json({ error: 'Contenido requerido' });
+    if (!content?.trim()) 
+      return res.status(400).json({ error: 'Contenido requerido' });
+
     const post = await Post.create({
       content: content.trim(),
-      author: { id: req.user.id, nickname: req.user.nickname, correo: req.user.correo },
+      author: { 
+        id: req.user.id, 
+        nickname: req.user.nickname, 
+        correo: req.user.correo 
+      },
     });
+
+    //  Enviar notificación push a todos los usuarios con token registrado
+    sendNewPostNotification(post);
+
     res.status(201).json(post);
   } catch (e) {
+    console.error(e);
     res.status(500).json({ error: 'Error al crear post' });
   }
 });
+
+
+// ------------------------
+//  Enviar notificación FCM a todos los usuarios
+// ------------------------
+async function sendNewPostNotification(post) {
+  try {
+    const users = await Usuario.find({
+      fcmToken: { $exists: true, $ne: null },
+    }).select('fcmToken');
+
+    const tokens = users.map(u => u.fcmToken).filter(Boolean);
+
+    if (!tokens.length) {
+      console.log('No hay tokens FCM guardados. No se envía notificación.');
+      return;
+    }
+
+    const message = {
+      tokens,
+      notification: {
+        title: 'Nuevo post en el foro',
+        body:
+          `${post.author.nickname}: ` +
+          (post.content.length > 60
+            ? post.content.substring(0, 60) + '…'
+            : post.content),
+      },
+      data: {
+        type: 'new_post',
+        postId: post._id.toString(),
+      },
+    };
+
+    const res = await admin.messaging().sendMulticast(message);
+    console.log(` Notificaciones enviadas: ${res.successCount}, fallos: ${res.failureCount}`);
+  } catch (e) {
+    console.error('Error enviando notificación FCM:', e);
+  }
+}
+
 
 // Listar posts (paginado)
 router.get('/posts', async (req, res) => {

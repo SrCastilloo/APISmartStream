@@ -1,13 +1,17 @@
 require('dotenv').config();
 const express = require('express'); 
-const bcrypt= require('bcrypt');
 const app = express();
+const cors = require('cors');
+app.use(cors());
+const bcrypt= require('bcrypt');
 const connectDB = require('./db');
 const Usuario = require('./user.model');
 const forumRoutes = require('./forum.routes');
+
 app.use(express.json());
 const jwt = require('jsonwebtoken'); 
-const cors = require('cors');
+
+
 
 
 //conectar a la base de datos
@@ -20,6 +24,33 @@ const cors = require('cors');
     process.exit(1);
   }
 })();
+
+// Guardar / actualizar token FCM de un usuario
+app.post('/usuarios/fcm-token', async (req, res) => {
+  try {
+    const { correo, token } = req.body;
+
+    if (!correo || !token) {
+      return res.status(400).json({ error: 'Faltan correo o token' });
+    }
+
+    const user = await Usuario.findOneAndUpdate(
+      { correo: correo.toLowerCase() },
+      { fcmToken: token },
+      { new: true }
+    ).select('-contrasena');
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Error guardando FCM token:', err);
+    return res.status(500).json({ error: 'Error interno' });
+  }
+});
+
 
 
 
@@ -58,20 +89,25 @@ app.get('/usuarios/:correo',  async(req,res) => {
 
 });
 
-app.post('/usuarios',async (req,res) => {
+app.post('/usuarios', async (req, res) => {
+  try {
+    const { nickname, correo, contrasena } = req.body;
+    
+    // Verificar si el correo ya está en uso
+    const existingUser = await Usuario.findOne({ correo });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Correo ya está en uso' });
+    }
 
-        try{
-            const {nickname, correo, contrasena} = req.body;
-            const salt = await bcrypt.genSalt(10);
-            const hashedpassword = await bcrypt.hash(contrasena, salt);
-            const user = await Usuario.create({nickname,correo,contrasena: hashedpassword});
-            res.status(201).json(user);
-        }catch(err)
-        {
-            res.status(500).send(err);
-        }
-}
-);
+    const salt = await bcrypt.genSalt(10);
+    const hashedpassword = await bcrypt.hash(contrasena, salt);
+    const user = await Usuario.create({ nickname, correo, contrasena: hashedpassword });
+
+    res.status(201).json(user);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
 
 
 
@@ -121,7 +157,6 @@ app.delete('/usuarios/:correo',async (req,res) => {
 
 
 app.use('/forum',forumRoutes);
-app.use(cors());
 
 const port = process.env.port || 3000;    
 app.listen(port, () => console.log(`Escuchando en el puerto ${port} ...`));

@@ -4,7 +4,8 @@ const { Schema, model } = require('mongoose');
 const userSchema = new Schema({
   nickname: { type: String, required: true, trim: true },
   correo:   { type: String, required: true, unique: true, lowercase: true, trim: true },
-  contrasena:{ type: String, required: true }
+  contrasena:{ type: String, required: true },
+  fcmToken: { type: String, default: null },
 }, { timestamps: true });
 
 module.exports = model('Usuario', userSchema);
