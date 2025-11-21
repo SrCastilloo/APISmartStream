@@ -13,15 +13,15 @@ const router = express.Router();
 router.post('/posts', auth, async (req, res) => {
   try {
     const { content } = req.body;
-    if (!content?.trim()) 
+    if (!content?.trim())
       return res.status(400).json({ error: 'Contenido requerido' });
 
     const post = await Post.create({
       content: content.trim(),
-      author: { 
-        id: req.user.id, 
-        nickname: req.user.nickname, 
-        correo: req.user.correo 
+      author: {
+        id: req.user.id,
+        nickname: req.user.nickname,
+        correo: req.user.correo
       },
     });
 
@@ -68,12 +68,12 @@ async function sendNewPostNotification(post) {
       },
     };
 
-    console.log('TOKENS FCM:', tokens);
-    console.log(`Notificaciones enviadas: ${res.successCount}, fallos: ${res.failureCount}`);
 
+
+    console.log('TOKENS FCM:', tokens);
 
     const res = await admin.messaging().sendMulticast(message);
-    console.log(` Notificaciones enviadas: ${res.successCount}, fallos: ${res.failureCount}`);
+    console.log(`Notificaciones enviadas: ${res.successCount}, fallos: ${res.failureCount}`);
   } catch (e) {
     console.error('Error enviando notificación FCM:', e);
   }
