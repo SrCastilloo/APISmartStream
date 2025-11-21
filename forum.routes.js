@@ -39,6 +39,9 @@ router.post('/posts', auth, async (req, res) => {
 // ------------------------
 //  Enviar notificación FCM a todos los usuarios
 // ------------------------
+// ------------------------
+//  Enviar notificación FCM a todos los usuarios
+// ------------------------
 async function sendNewPostNotification(post) {
   try {
     const users = await Usuario.find({
@@ -52,8 +55,9 @@ async function sendNewPostNotification(post) {
       return;
     }
 
-    const message = {
-      tokens,
+    console.log('TOKENS FCM:', tokens);
+
+    const payload = {
       notification: {
         title: 'Nuevo post en el foro',
         body:
@@ -68,12 +72,12 @@ async function sendNewPostNotification(post) {
       },
     };
 
+  
+    const res = await admin.messaging().sendToDevice(tokens, payload);
 
-
-    console.log('TOKENS FCM:', tokens);
-
-    const res = await admin.messaging().sendMulticast(message);
-    console.log(`Notificaciones enviadas: ${res.successCount}, fallos: ${res.failureCount}`);
+    console.log(
+      `Notificaciones enviadas: ${res.successCount}, fallos: ${res.failureCount}`,
+    );
   } catch (e) {
     console.error('Error enviando notificación FCM:', e);
   }
