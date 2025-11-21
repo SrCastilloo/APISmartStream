@@ -87,3 +87,4 @@ ios/Flutter/flutter_export_environment.sh
 # Archivos de entorno específicos del servidor
 .env
 .env.*
+firebase-service-account.json
